@@ -50,22 +50,6 @@ export const RULES: RuleDefinition[] = [
     severity: "medium",
     languages: ["typescript", "javascript", "python"],
   },
-  {
-    id: "SEC007",
-    name: "missing-auth-check",
-    description: "Route handlers without authentication middleware",
-    category: "security",
-    severity: "high",
-    languages: ["typescript", "javascript"],
-  },
-  {
-    id: "SEC008",
-    name: "missing-rate-limit",
-    description: "Public endpoints without rate limiting",
-    category: "security",
-    severity: "medium",
-    languages: ["typescript", "javascript"],
-  },
   // Quality rules
   {
     id: "QUA001",
@@ -107,14 +91,6 @@ export const RULES: RuleDefinition[] = [
     severity: "low",
     languages: ["typescript", "javascript", "python"],
   },
-  {
-    id: "QUA006",
-    name: "dead-code",
-    description: "Exported functions that are never imported elsewhere",
-    category: "quality",
-    severity: "low",
-    languages: ["typescript", "javascript"],
-  },
   // Production readiness rules
   {
     id: "PRD001",
@@ -147,14 +123,6 @@ export const RULES: RuleDefinition[] = [
     category: "production",
     severity: "medium",
     languages: ["typescript", "javascript", "python"],
-  },
-  {
-    id: "PRD005",
-    name: "no-retry-logic",
-    description: "External API calls without retry/backoff logic",
-    category: "production",
-    severity: "low",
-    languages: ["typescript", "javascript"],
   },
 ];
 

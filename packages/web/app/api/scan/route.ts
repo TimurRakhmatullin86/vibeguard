@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { insertScan } from "@/lib/db";
 import crypto from "crypto";
 
+export const dynamic = "force-dynamic";
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
@@ -10,6 +12,17 @@ export async function POST(req: NextRequest) {
     if (!projectName || !scanResult) {
       return NextResponse.json(
         { error: "projectName and scanResult are required" },
+        { status: 400 }
+      );
+    }
+
+    if (
+      typeof scanResult.totalScore !== "number" ||
+      typeof scanResult.level !== "string" ||
+      !Array.isArray(scanResult.issues)
+    ) {
+      return NextResponse.json(
+        { error: "scanResult must contain totalScore (number), level (string), and issues (array)" },
         { status: 400 }
       );
     }
@@ -40,7 +53,7 @@ export async function POST(req: NextRequest) {
       qualityMax: quality?.maxScore ?? 30,
       productionScore: production?.score ?? 0,
       productionMax: production?.maxScore ?? 30,
-      filesScanned: scanResult.filesScanned,
+      filesScanned: scanResult.filesScanned ?? 0,
       issuesJson: JSON.stringify(scanResult.issues),
     });
 

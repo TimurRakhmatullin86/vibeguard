@@ -80,7 +80,10 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
 
   const scan = getLatestScan(params.id);
   const history = getProjectScans(params.id);
-  const issues = scan ? JSON.parse(scan.issues_json) : [];
+  let issues: any[] = [];
+  if (scan) {
+    try { issues = JSON.parse(scan.issues_json); } catch { issues = []; }
+  }
 
   const levelColor = scan ? LEVEL_COLORS[scan.level] || "var(--text)" : "var(--text-muted)";
   const levelLabel = scan ? LEVEL_LABELS[scan.level] || scan.level : "No scans";

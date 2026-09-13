@@ -2,12 +2,12 @@ import type { RuleChecker } from "../../scanner";
 import type { Issue } from "@vibeguard/shared";
 
 const SECRET_PATTERNS = [
-  { pattern: /(?:api[_-]?key|apikey)\s*[:=]\s*["'`]([a-zA-Z0-9_\-]{20,})["'`]/gi, name: "API key" },
+  { pattern: /(?:api[_-]?key|apikey)\s*[:=]\s*["'`]([a-zA-Z0-9_-]{20,})["'`]/gi, name: "API key" },
   { pattern: /(?:secret|token|password|passwd|pwd)\s*[:=]\s*["'`]([^\s"'`]{8,})["'`]/gi, name: "secret/token" },
   { pattern: /["'`](sk-[a-zA-Z0-9]{20,})["'`]/g, name: "OpenAI API key" },
   { pattern: /["'`](ghp_[a-zA-Z0-9]{36,})["'`]/g, name: "GitHub token" },
   { pattern: /["'`](AKIA[A-Z0-9]{16})["'`]/g, name: "AWS access key" },
-  { pattern: /["'`](xox[bpsa]-[a-zA-Z0-9\-]{10,})["'`]/g, name: "Slack token" },
+  { pattern: /["'`](xox[bpsa]-[a-zA-Z0-9-]{10,})["'`]/g, name: "Slack token" },
   { pattern: /(?:bearer|authorization)\s*[:=]\s*["'`]([^\s"'`]{20,})["'`]/gi, name: "Bearer token" },
 ];
 
@@ -139,32 +139,41 @@ const corsWildcard: RuleChecker = {
   check(filePath, content): Issue[] {
     const issues: Issue[] = [];
     const lines = content.split("\n");
-    const corsPatterns = [
-      /cors\(\s*\{[^}]*origin\s*:\s*["'`]\*["'`]/,
+    const corsLinePatterns = [
       /cors\(\s*\)/,
-      /['"]Access-Control-Allow-Origin['"]\s*,\s*["'`]\*["'`]/,
-      /origin\s*:\s*true/,
+      /cors\(\s*\{/,
+      /['"]Access-Control-Allow-Origin['"]/,
     ];
+    const reportedLines = new Set<number>();
 
     for (let i = 0; i < lines.length; i++) {
-      const ctx = lines.slice(i, Math.min(i + 3, lines.length)).join(" ");
-      for (const pattern of corsPatterns) {
-        if (pattern.test(ctx)) {
-          issues.push({
-            ruleId: "SEC004",
-            severity: "high",
-            category: "security",
-            message: "CORS wildcard — allows requests from any origin",
-            file: filePath,
-            line: i + 1,
-            snippet: lines[i].trim().substring(0, 80),
-            fix: {
-              description: "Restrict CORS to specific trusted origins",
-              autoFixable: false,
-            },
-          });
-          break;
-        }
+      const line = lines[i];
+      const isCorsLine = corsLinePatterns.some((p) => p.test(line));
+      if (!isCorsLine) continue;
+      if (reportedLines.has(i)) continue;
+
+      const ctx = lines.slice(i, Math.min(i + 5, lines.length)).join(" ");
+      const isWildcard =
+        /cors\(\s*\)/.test(line) ||
+        /origin\s*:\s*["'`]\*["'`]/.test(ctx) ||
+        /origin\s*:\s*true/.test(ctx) ||
+        /['"]Access-Control-Allow-Origin['"]\s*,\s*["'`]\*["'`]/.test(ctx);
+
+      if (isWildcard) {
+        reportedLines.add(i);
+        issues.push({
+          ruleId: "SEC004",
+          severity: "high",
+          category: "security",
+          message: "CORS wildcard — allows requests from any origin",
+          file: filePath,
+          line: i + 1,
+          snippet: line.trim().substring(0, 80),
+          fix: {
+            description: "Restrict CORS to specific trusted origins",
+            autoFixable: false,
+          },
+        });
       }
     }
     return issues;

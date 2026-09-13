@@ -77,7 +77,7 @@ export default function Dashboard() {
               fontSize: "14px",
             }}
           >
-            npx vibeguard check ./your-project --report http://localhost:3700
+            npx vibeguard check ./your-project
           </code>
         </div>
       ) : (

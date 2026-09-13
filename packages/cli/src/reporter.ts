@@ -15,10 +15,6 @@ const LEVEL_COLORS: Record<ScoreLevel, (s: string) => string> = {
   "not-ready": chalk.red,
 };
 
-function pad(s: string, len: number): string {
-  return s + " ".repeat(Math.max(0, len - s.length));
-}
-
 function renderBox(text: string, color: (s: string) => string): string {
   const len = text.length + 4;
   const top = color("╔" + "═".repeat(len) + "╗");

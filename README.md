@@ -80,7 +80,7 @@ vibeguard fix ./src --auto
 ```
 
 Auto-fix handles:
-- Removing unused imports
+- Removing unused imports (preserves used imports from the same line)
 - Replacing hardcoded secrets with `process.env.X`
 - Replacing `http://` with `https://` in API calls
 - Creating `.env.example` template
@@ -98,13 +98,13 @@ Auto-fix handles:
 
 | Category | Weight | Focus |
 |----------|--------|-------|
-| Security | 40 pts | Hardcoded secrets, SQL injection, eval(), CORS, missing auth |
+| Security | 40 pts | Hardcoded secrets, SQL injection, eval(), CORS |
 | Code Quality | 30 pts | Unused imports, empty catch, console.log, TODO/FIXME, magic numbers |
 | Production | 30 pts | Health check, graceful shutdown, env management, structured logging |
 
-## Rules (19 total)
+## Rules (15 total)
 
-### Security (8 rules)
+### Security (6 rules)
 | ID | Rule | Severity |
 |----|------|----------|
 | SEC001 | Hardcoded API keys and secrets | Critical |
@@ -113,10 +113,8 @@ Auto-fix handles:
 | SEC004 | CORS wildcard `*` origin | High |
 | SEC005 | eval(), exec(), dangerouslySetInnerHTML | Critical |
 | SEC006 | HTTP instead of HTTPS in API calls | Medium |
-| SEC007 | Missing authentication on routes | High |
-| SEC008 | Missing rate limiting | Medium |
 
-### Code Quality (6 rules)
+### Code Quality (5 rules)
 | ID | Rule | Severity |
 |----|------|----------|
 | QUA001 | Unused imports | Low |
@@ -124,16 +122,14 @@ Auto-fix handles:
 | QUA003 | console.log/print in production code | Low |
 | QUA004 | TODO/FIXME comments from AI | Low |
 | QUA005 | Magic numbers without constants | Low |
-| QUA006 | Dead/unused exported functions | Low |
 
-### Production Readiness (5 rules)
+### Production Readiness (4 rules)
 | ID | Rule | Severity |
 |----|------|----------|
 | PRD001 | No .env file or env management | Medium |
 | PRD002 | No health check endpoint | Medium |
 | PRD003 | No graceful shutdown handler | Medium |
 | PRD004 | No structured logging library | Medium |
-| PRD005 | No retry logic on external API calls | Low |
 
 ## Web Dashboard
 
@@ -145,9 +141,10 @@ cd packages/web
 npm run dev
 
 # Submit scan results to dashboard
-vibeguard check ./project --format json | curl -X POST http://localhost:3700/api/scan \
+SCAN=$(vibeguard check ./project --format json)
+curl -X POST http://localhost:3700/api/scan \
   -H "Content-Type: application/json" \
-  -d "{\"projectName\": \"my-app\", \"scanResult\": $(cat -)}"
+  -d "{\"projectName\": \"my-app\", \"scanResult\": $SCAN}"
 ```
 
 **Dashboard features:**
@@ -167,7 +164,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: ./. github/actions/check
+      - uses: TimurRakhmatullin86/vibeguard/.github/actions/check@main
         with:
           min-score: 70
           fail-on: critical
@@ -177,7 +174,7 @@ jobs:
 
 | Language | Support Level |
 |----------|--------------|
-| TypeScript / JavaScript | Full (all 19 rules) |
+| TypeScript / JavaScript | Full (all 15 rules) |
 | Python | Partial (SEC001, SEC002, SEC005, SEC006, QUA003, QUA004, QUA005, PRD001) |
 
 ## Why Not SonarQube?
