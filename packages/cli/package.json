@@ -1,0 +1,35 @@
+{
+  "name": "vibeguard",
+  "version": "0.1.0",
+  "description": "AI-generated code quality scanner — catch what SonarQube misses",
+  "main": "dist/index.js",
+  "bin": {
+    "vibeguard": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "test": "node --test dist/**/*.test.js"
+  },
+  "keywords": [
+    "ai",
+    "code-quality",
+    "security",
+    "scanner",
+    "linter",
+    "vibe-coding",
+    "sonarqube-alternative"
+  ],
+  "author": "Timur Rakhmatullin <timur.rakhmatullin86@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "@vibeguard/shared": "0.1.0",
+    "commander": "^12.1.0",
+    "glob": "^10.4.0",
+    "chalk": "^4.1.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "typescript": "^5.5.0"
+  }
+}

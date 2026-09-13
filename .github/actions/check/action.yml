@@ -1,0 +1,83 @@
+name: "VibeGuard Check"
+description: "Scan AI-generated code for security, quality, and production readiness issues"
+author: "Timur Rakhmatullin"
+
+inputs:
+  path:
+    description: "Path to scan (default: current directory)"
+    required: false
+    default: "."
+  min-score:
+    description: "Minimum score threshold — fails the step if below"
+    required: false
+    default: "0"
+  fail-on:
+    description: "Fail if issues of this severity or higher exist (critical, high, medium, low)"
+    required: false
+    default: ""
+  format:
+    description: "Output format: text or json"
+    required: false
+    default: "text"
+
+outputs:
+  score:
+    description: "The total VibeGuard score (0-100)"
+  level:
+    description: "Score level: production-ready, needs-review, risky, not-ready"
+  issues:
+    description: "Number of issues found"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: "20"
+
+    - name: Install VibeGuard
+      shell: bash
+      run: npm install -g vibeguard
+
+    - name: Run VibeGuard scan
+      id: scan
+      shell: bash
+      run: |
+        set +e
+        OUTPUT=$(vibeguard check "${{ inputs.path }}" --format json --min-score "${{ inputs.min-score }}" 2>&1)
+        EXIT_CODE=$?
+
+        SCORE=$(echo "$OUTPUT" | jq -r '.totalScore // empty' 2>/dev/null)
+        LEVEL=$(echo "$OUTPUT" | jq -r '.level // empty' 2>/dev/null)
+        ISSUE_COUNT=$(echo "$OUTPUT" | jq -r '.issues | length // 0' 2>/dev/null)
+
+        echo "score=${SCORE:-0}" >> $GITHUB_OUTPUT
+        echo "level=${LEVEL:-unknown}" >> $GITHUB_OUTPUT
+        echo "issues=${ISSUE_COUNT:-0}" >> $GITHUB_OUTPUT
+
+        if [ "${{ inputs.format }}" = "text" ]; then
+          vibeguard check "${{ inputs.path }}" --min-score "${{ inputs.min-score }}"
+        else
+          echo "$OUTPUT"
+        fi
+
+        FAIL_ON="${{ inputs.fail-on }}"
+        if [ -n "$FAIL_ON" ] && [ "$ISSUE_COUNT" -gt 0 ]; then
+          SEVERITIES="critical high medium low"
+          FAIL_REACHED=false
+          for SEV in $SEVERITIES; do
+            if [ "$SEV" = "$FAIL_ON" ]; then
+              FAIL_REACHED=true
+            fi
+            if [ "$FAIL_REACHED" = true ]; then
+              COUNT=$(echo "$OUTPUT" | jq "[.issues[] | select(.severity == \"$SEV\")] | length" 2>/dev/null)
+              if [ "$COUNT" -gt 0 ]; then
+                echo "::error::VibeGuard found $COUNT $SEV issue(s)"
+                exit 1
+              fi
+            fi
+          done
+        fi
+
+        exit $EXIT_CODE

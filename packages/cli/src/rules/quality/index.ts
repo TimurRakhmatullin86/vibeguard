@@ -1,0 +1,1 @@
+export { qualityRules } from "./rules";
